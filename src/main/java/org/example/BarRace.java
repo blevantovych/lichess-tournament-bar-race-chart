@@ -1,20 +1,29 @@
 package org.example;
 
 import com.google.gson.Gson;
+import lombok.SneakyThrows;
 import lombok.ToString;
-import org.javatuples.Triplet;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 
 @ToString
 class Move {
@@ -23,8 +32,8 @@ class Move {
 
 	public int clockTimeToSeconds() {
 		String[] hoursMinutesSeconds = c.split(":");
-		int minutes = Integer.valueOf(hoursMinutesSeconds[1]);
-		int seconds = Integer.valueOf(hoursMinutesSeconds[2]);
+		int minutes = Integer.parseInt(hoursMinutesSeconds[1]);
+		int seconds = Integer.parseInt(hoursMinutesSeconds[2]);
 		return minutes * 60 + seconds;
 	}
 }
@@ -39,10 +48,12 @@ class Game {
 	public String Result;
 	public String UTCDate;
 	public String UTCTime;
-	public int WhiteElo;
-	public int BlackElo;
+	public String WhiteElo;
+	public String BlackElo;
 	public String WhiteRatingDiff;
 	public String BlackRatingDiff;
+	public String WhiteTitle;
+	public String BlackTitle;
 	public String WhiteTeam;
 	public String BlackTeam;
 	public String Variant;
@@ -50,6 +61,36 @@ class Game {
 	public String ECO;
 	public String Termination;
 	public List<Move> moves;
+	// custom properties
+	public LocalTime UTCEndTime;
+	public int whiteScore;
+	public int blackScore;
+}
+
+@ToString
+class Sheet {
+	private String scores;
+	private List<Integer> scoreList;
+
+	public List<Integer> getScores() {
+
+		if (scoreList == null) {
+			scoreList = Arrays.stream(scores.split("")).map(Integer::valueOf).collect(Collectors.toList());
+			Collections.reverse(scoreList);
+		}
+		return scoreList;
+	}
+}
+
+@ToString
+class Standing {
+	public int rank;
+	public int score;
+	public int rating;
+	public String username;
+	public int performance;
+	public String team;
+	public Sheet sheet;
 }
 
 @ToString
@@ -60,31 +101,172 @@ class LongestThoughtMove {
 }
 
 public class BarRace {
-	public static void main(String[] args) throws IOException, ParseException {
-		JSONParser parser = new JSONParser();
+	static List<Standing> standings = new ArrayList<>();
+	static List<Game> games = new ArrayList<>();
+	static Map<String, String> teamNames;
+	static {
 		Gson gson = new Gson();
-
-		Object obj = parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
-		JSONArray gamesJson = (JSONArray) obj;
-
-		List<Game> games = new ArrayList<>();
-		for (Object gameObj : gamesJson) {
-			games.add(gson.fromJson(gameObj.toString(), Game.class));
+		JSONParser parser = new JSONParser();
+		// https://lichess.org/api/tournament/{id}/results?sheet=true
+		try {
+			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/standings.json"));
+			// https://lichess.org/api/tournament/{id}/games
+			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
+			// https://lichess.org/api/tournament/{id}
+			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/teamNames.json"));
+			for (Object gameObj : gamesJson) {
+				games.add(gson.fromJson(gameObj.toString(), Game.class));
+			}
+			for (Object standingJson : standingsJson) {
+				Standing standing = gson.fromJson(standingJson.toString(), Standing.class);
+				standings.add(standing);
+			}
+			teamNames = JSONToMapConverter.convertJSONToMap(teamNamesJson.toJSONString());
+		} catch (IOException | ParseException e) {
+			throw new RuntimeException(e);
 		}
-		var max= games.stream()
-				.map(game ->
-						IntStream.range(0, game.moves.size() - 2)
-								.mapToObj(i -> {
-									var moveTime = game.moves.get(i).clockTimeToSeconds() - game.moves.get(i + 2).clockTimeToSeconds();
-									var ply = i + 2;
-									return new Triplet(game, moveTime, ply);
-								}).reduce((longestThoughtMove, current) ->
-										((int) current.getValue1() > (int) longestThoughtMove.getValue1()) ? current : longestThoughtMove
-								)).filter(t -> t != null && t.isPresent())
-				.sorted(Comparator.comparingInt(a ->
-					(int) a.get().getValue1()
-				)).collect(Collectors.toList());
-		System.out.println(max);
+	}
 
+	@SneakyThrows
+	public static Map<String, Integer> getTeamScores(int secondsSinceStart) {
+		Map<String, Integer> playerCurrentGame = new HashMap<>();
+
+		for (Standing standing : standings) {
+			playerCurrentGame.put(standing.username, 0);
+		}
+		var gamesWithEndTime= games.stream()
+				.filter(game -> game.moves.size() >= 2)
+				.peek(game -> {
+					int initialTimeInSeconds = Integer.parseInt(game.TimeControl.split("\\+")[0]);
+					// <= probably could have been ==
+					boolean hasWhiteBerserked = game.moves.get(0).clockTimeToSeconds() <= initialTimeInSeconds / 2;
+					// we can't know for sure that black has berseked as they could have spent more than half of the time on the first move
+					// but that should be fairly rare
+					boolean hasBlackBerserked = game.moves.get(1).clockTimeToSeconds() <= initialTimeInSeconds / 2;
+					int gameDurationInSeconds = 0;
+					if (game.Termination.equals("Time forfeit")) {
+						if (game.Result.equals("1-0")) {
+							if (hasBlackBerserked) {
+								gameDurationInSeconds += getBerserkedForfeitedGameDuration(game, initialTimeInSeconds, hasWhiteBerserked);
+							} else {
+								gameDurationInSeconds += initialTimeInSeconds;
+							}
+						} else if (game.Result.equals("0-1")) {
+							if (hasWhiteBerserked) {
+								gameDurationInSeconds += getBerserkedForfeitedGameDuration(game, initialTimeInSeconds, hasBlackBerserked);
+							} else {
+								gameDurationInSeconds += initialTimeInSeconds;
+							}
+						}
+					} else {
+						Move secondToLastMove = game.moves.get(game.moves.size() - 2);
+						Move lastMove = game.moves.get(game.moves.size() - 1);
+						gameDurationInSeconds = 2 * initialTimeInSeconds - secondToLastMove.clockTimeToSeconds() - lastMove.clockTimeToSeconds();
+					}
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+					LocalTime localTime = LocalTime.parse(game.UTCTime, formatter);
+					game.UTCEndTime = localTime
+							.plusMinutes( gameDurationInSeconds / 60)
+							.plusSeconds(gameDurationInSeconds % 60);
+					var whitePlayerScoreSheet = standings.stream().filter(s -> s.username.equals(game.White)).findFirst();
+					var blackPlayerScoreSheet = standings.stream().filter(s -> s.username.equals(game.Black)).findFirst();
+					game.whiteScore = whitePlayerScoreSheet.isPresent() ? whitePlayerScoreSheet.get().sheet.getScores().get(playerCurrentGame.get(game.White)) : 0;
+					game.blackScore = blackPlayerScoreSheet.isPresent() ? blackPlayerScoreSheet.get().sheet.getScores().get(playerCurrentGame.get(game.Black)) : 0;
+					if (whitePlayerScoreSheet.isPresent()) {
+						playerCurrentGame.put(game.White, playerCurrentGame.get(game.White) + 1);
+					}
+
+					if (blackPlayerScoreSheet.isPresent()) {
+						playerCurrentGame.put(game.Black, playerCurrentGame.get(game.Black) + 1);
+					}
+				}).filter(game -> {
+					var tournamentStart = LocalTime.parse("18:00:00");
+					var newTime = tournamentStart.plusSeconds(secondsSinceStart);
+					return game.UTCEndTime.compareTo(newTime) < 0;
+				}).collect(Collectors.toList());
+
+		Map<String, List<Game>> teamToGames = new HashMap<>();
+		for (Game game : gamesWithEndTime) {
+			addGameToTeam(game, game.WhiteTeam, teamToGames);
+			addGameToTeam(game, game.BlackTeam, teamToGames);
+		}
+
+//		List<Pair<String, Integer>> teamScores = new ArrayList<>();
+		Map<String, Integer> teamScores = new HashMap<>();
+
+		for (Map.Entry<String, List<Game>> teamGames : teamToGames.entrySet()) {
+			String team = teamNames.get(teamGames.getKey());
+			Map<String, Integer> contibutionsByPlayer = new HashMap<>();
+
+			teamGames.getValue().forEach(game -> {
+				String teamPlayer = teamGames.getKey().equals(game.WhiteTeam) ? game.White : game.Black;
+				int playerContribution = teamGames.getKey().equals(game.WhiteTeam) ? game.whiteScore : game.blackScore;
+				if (contibutionsByPlayer.containsKey(teamPlayer)) {
+					contibutionsByPlayer.put(teamPlayer, contibutionsByPlayer.get(teamPlayer) + playerContribution);
+				} else {
+					contibutionsByPlayer.put(teamPlayer, playerContribution);
+				}
+			});
+
+			int teamScore = contibutionsByPlayer.values().stream().sorted(Comparator.reverseOrder()).limit(5).reduce(0, Integer::sum);
+			teamScores.put(team, teamScore);
+		}
+
+//		teamScores.stream().sorted(Comparator.comparing(Pair::getValue1)).forEach(teamScore -> {
+//			System.out.println(teamScore.getValue0() + ": " + teamScore.getValue1());
+//		});
+		return teamScores;
+	}
+
+	public static void writeToFile(String data, FileWriter writer) {
+		try {
+			writer.write(data);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static void main(String[] args) throws IOException {
+		int tournamentDurationInSeconds = (int) (1.5 /* hours */ * 60 * 60);
+
+		var teamScoresInEachSecond = IntStream.rangeClosed(0, tournamentDurationInSeconds);
+		FileWriter f = new FileWriter("output.csv");
+		var teamNamesList = teamNames.values();
+		writeToFile(",", f);
+		teamNamesList.forEach(teamName -> writeToFile(teamName.replace("\"", "").replace(",", "") + ",", f));
+		writeToFile(System.getProperty("line.separator"), f);
+		teamScoresInEachSecond.forEach(second -> {
+			var teamScoresAtSpecificInstant  = getTeamScores(second);
+			var tournamentStart = LocalTime.parse("18:00:00");
+			var newTime = tournamentStart.plusSeconds(second);
+			writeToFile(newTime + ",", f);
+			teamNamesList.forEach(teamName -> writeToFile(Optional.ofNullable(teamScoresAtSpecificInstant.get(teamName)).orElse(0) + ",", f));
+			writeToFile(System.getProperty("line.separator"), f);
+		});
+		f.close();
+	}
+
+	private static void addGameToTeam(Game game, String teamId, Map<String, List<Game>> teamToGames) {
+		if (teamToGames.containsKey(teamId)) {
+			teamToGames.get(teamId).add(game);
+		} else {
+			List<Game> teamGames = new ArrayList<>();
+			teamGames.add(game);
+			teamToGames.put(teamId, teamGames);
+		}
+	}
+
+	private static int getBerserkedForfeitedGameDuration(Game game, int initialTimeInSeconds, boolean hasBerserked) {
+		final int berserkedGameDurationInSeconds = initialTimeInSeconds / 2;
+		int gameDurationInSeconds = berserkedGameDurationInSeconds;
+		final Move lastMove = game.moves.get(game.moves.size() - 1);
+		int timeWinnerUsed;
+		if (hasBerserked) {
+			timeWinnerUsed = berserkedGameDurationInSeconds - lastMove.clockTimeToSeconds();
+		} else {
+			timeWinnerUsed = initialTimeInSeconds - lastMove.clockTimeToSeconds();
+		}
+		gameDurationInSeconds += timeWinnerUsed;
+		return gameDurationInSeconds;
 	}
 }
