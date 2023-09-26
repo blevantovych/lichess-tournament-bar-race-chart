@@ -1,15 +1,18 @@
 package org.example;
 
-import com.google.gson.Gson;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.google.gson.Gson;
 
 public class WinsAgainsTitledPlayers {
 
@@ -27,9 +30,10 @@ public class WinsAgainsTitledPlayers {
 				.filter(game -> (game.White.equals("bodya17") && game.Result.equals("0-1")) || (game.Black.equals("bodya17") && game.Result.equals("1-0")))
 				.collect(Collectors.toList());
 		System.out.println("Wins: " + wins.size());
-		wins.forEach(System.out::println);
+		wins.stream().map(game -> game.Site).forEach(System.out::println);
 		System.out.println("Losses: " + loses.size());
 		System.out.println("Draws: " + (gamesWithTitlePlayers.size() - wins.size() - loses.size()));
+
 	}
 
 	public static List<Game> getGames() throws IOException, ParseException {
@@ -50,4 +54,8 @@ public class WinsAgainsTitledPlayers {
 	public WinsAgainsTitledPlayers() {
 
 	}
+
+	public int distributeCandies(int[] candyType) {
+		return Collections.max(List.of(Arrays.asList(candyType).stream().distinct().collect(Collectors.toList()).size(), candyType.length / 2));
+	}	
 }

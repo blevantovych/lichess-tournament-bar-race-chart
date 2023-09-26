@@ -107,10 +107,10 @@ public class BarRace {
 	static {
 		Gson gson = new Gson();
 		JSONParser parser = new JSONParser();
-		// https://lichess.org/api/tournament/{id}/results?sheet=true
 		try {
+			// https://lichess.org/api/tournament/{id}/results?sheet=true
 			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/standings.json"));
-			// https://lichess.org/api/tournament/{id}/games
+			// https://lichess.org/api/tournament/{id}/games?clocks=true
 			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
 			// https://lichess.org/api/tournament/{id}
 			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/teamNames.json"));
@@ -134,39 +134,13 @@ public class BarRace {
 		for (Standing standing : standings) {
 			playerCurrentGame.put(standing.username, 0);
 		}
-		var gamesWithEndTime= games.stream()
-				.filter(game -> game.moves.size() >= 2)
+		var gamesWithEndTime = games.stream()
 				.peek(game -> {
-					int initialTimeInSeconds = Integer.parseInt(game.TimeControl.split("\\+")[0]);
-					// <= probably could have been ==
-					boolean hasWhiteBerserked = game.moves.get(0).clockTimeToSeconds() <= initialTimeInSeconds / 2;
-					// we can't know for sure that black has berseked as they could have spent more than half of the time on the first move
-					// but that should be fairly rare
-					boolean hasBlackBerserked = game.moves.get(1).clockTimeToSeconds() <= initialTimeInSeconds / 2;
-					int gameDurationInSeconds = 0;
-					if (game.Termination.equals("Time forfeit")) {
-						if (game.Result.equals("1-0")) {
-							if (hasBlackBerserked) {
-								gameDurationInSeconds += getBerserkedForfeitedGameDuration(game, initialTimeInSeconds, hasWhiteBerserked);
-							} else {
-								gameDurationInSeconds += initialTimeInSeconds;
-							}
-						} else if (game.Result.equals("0-1")) {
-							if (hasWhiteBerserked) {
-								gameDurationInSeconds += getBerserkedForfeitedGameDuration(game, initialTimeInSeconds, hasBlackBerserked);
-							} else {
-								gameDurationInSeconds += initialTimeInSeconds;
-							}
-						}
-					} else {
-						Move secondToLastMove = game.moves.get(game.moves.size() - 2);
-						Move lastMove = game.moves.get(game.moves.size() - 1);
-						gameDurationInSeconds = 2 * initialTimeInSeconds - secondToLastMove.clockTimeToSeconds() - lastMove.clockTimeToSeconds();
-					}
+					int gameDurationInSeconds = getGameDuration(game);
 					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 					LocalTime localTime = LocalTime.parse(game.UTCTime, formatter);
 					game.UTCEndTime = localTime
-							.plusMinutes( gameDurationInSeconds / 60)
+							.plusMinutes(gameDurationInSeconds / 60)
 							.plusSeconds(gameDurationInSeconds % 60);
 					var whitePlayerScoreSheet = standings.stream().filter(s -> s.username.equals(game.White)).findFirst();
 					var blackPlayerScoreSheet = standings.stream().filter(s -> s.username.equals(game.Black)).findFirst();
@@ -217,6 +191,37 @@ public class BarRace {
 //		});
 		return teamScores;
 	}
+	
+	public static int getGameDuration(Game game) {
+		if (game.moves.size() < 2) return 0;
+		int gameDurationInSeconds = 0;
+		int initialTimeInSeconds = Integer.parseInt(game.TimeControl.split("\\+")[0]);
+		// <= probably could have been ==
+		boolean hasWhiteBerserked = game.moves.get(0).clockTimeToSeconds() <= initialTimeInSeconds / 2;
+		// we can't know for sure that black has berseked as they could have spent more than half of the time on the first move
+		// but that should be fairly rare
+		boolean hasBlackBerserked = game.moves.get(1).clockTimeToSeconds() <= initialTimeInSeconds / 2;
+
+		int maximumGameDuration = Integer.parseInt(game.TimeControl.split("\\+")[0]) * 2;
+		Move lastMove = game.moves.get(game.moves.size() - 1);
+
+		if (hasWhiteBerserked) {
+			maximumGameDuration /= 2;
+		}
+
+		if (hasBlackBerserked) {
+			maximumGameDuration /= 2;
+		}
+
+		if (game.Termination.equals("Time forfeit")) {
+			gameDurationInSeconds = maximumGameDuration - lastMove.clockTimeToSeconds();
+		} else {
+			Move secondToLastMove = game.moves.get(game.moves.size() - 2);
+			gameDurationInSeconds = maximumGameDuration - secondToLastMove.clockTimeToSeconds() - lastMove.clockTimeToSeconds();
+		}
+
+		return gameDurationInSeconds;
+	}
 
 	public static void writeToFile(String data, FileWriter writer) {
 		try {
@@ -227,7 +232,10 @@ public class BarRace {
 	}
 
 	public static void main(String[] args) throws IOException {
-		int tournamentDurationInSeconds = (int) (1.5 /* hours */ * 60 * 60);
+		// System.out.println(games.stream().map(game -> game.moves.size()).reduce(Integer::sum));
+		// System.out.println(games.stream().filter(game -> game.moves.size() < 2).collect(Collectors.toList()).size());
+		// System.out.println(games.stream().filter(game -> game.moves.size() < 2).collect(Collectors.toList()));
+		int tournamentDurationInSeconds = (int) (1.5 /* hours */ * 60 * 60 /* to make sure that all games are counted */);
 
 		var teamScoresInEachSecond = IntStream.rangeClosed(0, tournamentDurationInSeconds);
 		FileWriter f = new FileWriter("output.csv");
