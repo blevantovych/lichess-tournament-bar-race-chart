@@ -13,11 +13,12 @@ public class JSONToMapConverter {
 
 		JSONParser parser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) parser.parse(jsonString);
+		JSONObject teamNamesObject = (JSONObject)(((JSONObject) jsonObject.get("teamBattle")).get("teams"));
 
 		// Iterate over the JSONObject and add key-value pairs to the resultMap
-		for (Object key : jsonObject.keySet()) {
+		for (Object key : teamNamesObject.keySet()) {
 			String strKey = (String) key;
-			String strValue = (String) jsonObject.get(key);
+			String strValue = (String) teamNamesObject.get(key);
 			resultMap.put(strKey, strValue);
 		}
 

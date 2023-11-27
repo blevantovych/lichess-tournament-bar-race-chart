@@ -1,0 +1,357 @@
+{
+  "nbPlayers": 193,
+  "duels": [],
+  "isFinished": true,
+  "podium": [
+    {
+      "name": "Poblesk",
+      "rank": 1,
+      "rating": 2482,
+      "score": 63,
+      "team": "6s03nPhu",
+      "nb": { "game": 19, "berserk": 3, "win": 17 },
+      "performance": 2684
+    },
+    {
+      "name": "derik_yt",
+      "rank": 2,
+      "rating": 2527,
+      "score": 50,
+      "team": "rLAQU1ap",
+      "nb": { "game": 22, "berserk": 5, "win": 16 },
+      "performance": 2545
+    },
+    {
+      "name": "T-Rexy",
+      "rank": 3,
+      "rating": 2336,
+      "score": 48,
+      "team": "6s03nPhu",
+      "nb": { "game": 22, "berserk": 15, "win": 13 },
+      "performance": 2377
+    }
+  ],
+  "pairingsClosed": true,
+  "stats": {
+    "moves": 110701,
+    "averageRating": 1983,
+    "berserks": 512,
+    "blackWins": 675,
+    "games": 1463,
+    "draws": 96,
+    "whiteWins": 692
+  },
+  "teamStanding": [
+    {
+      "rank": 1,
+      "id": "6s03nPhu",
+      "score": 220,
+      "players": [
+        { "user": { "name": "Poblesk", "id": "poblesk" }, "score": 63 },
+        { "user": { "name": "T-Rexy", "id": "t-rexy" }, "score": 48 },
+        { "user": { "name": "Vgrechko99", "id": "vgrechko99" }, "score": 45 },
+        { "user": { "name": "Zakharchuk", "id": "zakharchuk" }, "score": 33 },
+        { "user": { "name": "chessyriy", "id": "chessyriy" }, "score": 31 }
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "rLAQU1ap",
+      "score": 199,
+      "players": [
+        { "user": { "name": "derik_yt", "id": "derik_yt" }, "score": 50 },
+        { "user": { "name": "Izi_raiting", "id": "izi_raiting" }, "score": 46 },
+        { "user": { "name": "kmsalex", "id": "kmsalex" }, "score": 40 },
+        { "user": { "name": "ValMir76", "id": "valmir76" }, "score": 35 },
+        {
+          "user": { "name": "Chesssenior1957", "id": "chesssenior1957" },
+          "score": 28
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "kremenchuk-zazuliak-team",
+      "score": 188,
+      "players": [
+        {
+          "user": { "name": "Zazuliak", "title": "FM", "id": "zazuliak" },
+          "score": 46
+        },
+        { "user": { "name": "FitSt_time", "id": "fitst_time" }, "score": 46 },
+        {
+          "user": { "name": "I_am_Malenia", "id": "i_am_malenia" },
+          "score": 41
+        },
+        { "user": { "name": "AndriyKa12", "id": "andriyka12" }, "score": 29 },
+        {
+          "user": { "name": "Chess_tiktok", "id": "chess_tiktok" },
+          "score": 26
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "kherson-atlant",
+      "score": 184,
+      "players": [
+        {
+          "user": {
+            "name": "Loy_Konstantin",
+            "title": "NM",
+            "id": "loy_konstantin"
+          },
+          "score": 40
+        },
+        {
+          "user": {
+            "name": "Dimitriy1975",
+            "title": "NM",
+            "id": "dimitriy1975"
+          },
+          "score": 39
+        },
+        { "user": { "name": "NIKITARVC1", "id": "nikitarvc1" }, "score": 38 },
+        {
+          "user": { "name": "chessonemanager", "id": "chessonemanager" },
+          "score": 34
+        },
+        {
+          "user": { "name": "yegorches2008", "id": "yegorches2008" },
+          "score": 33
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "team-odessa",
+      "score": 158,
+      "players": [
+        { "user": { "name": "Ukrop2018", "id": "ukrop2018" }, "score": 41 },
+        {
+          "user": { "name": "MaximKhimchenko", "id": "maximkhimchenko" },
+          "score": 35
+        },
+        { "user": { "name": "attmeister", "id": "attmeister" }, "score": 30 },
+        { "user": { "name": "wanderer232", "id": "wanderer232" }, "score": 27 },
+        { "user": { "name": "Ak8201", "id": "ak8201" }, "score": 25 }
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "K70K90mu",
+      "score": 157,
+      "players": [
+        { "user": { "name": "BaleevK", "id": "baleevk" }, "score": 37 },
+        { "user": { "name": "Jamming_UA", "id": "jamming_ua" }, "score": 33 },
+        { "user": { "name": "coxno", "id": "coxno" }, "score": 31 },
+        { "user": { "name": "kudriik", "id": "kudriik" }, "score": 30 },
+        { "user": { "name": "Anti31", "id": "anti31" }, "score": 26 }
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "bnmmZI3d",
+      "score": 148,
+      "players": [
+        {
+          "user": { "name": "ChorniyVoron", "id": "chorniyvoron" },
+          "score": 37
+        },
+        { "user": { "name": "samokl13", "id": "samokl13" }, "score": 33 },
+        { "user": { "name": "Fensuy1991", "id": "fensuy1991" }, "score": 28 },
+        { "user": { "name": "Artemtop228", "id": "artemtop228" }, "score": 26 },
+        { "user": { "name": "matuzalemov", "id": "matuzalemov" }, "score": 24 }
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "poltava",
+      "score": 140,
+      "players": [
+        {
+          "user": { "name": "Poets_Of_The_Fall", "id": "poets_of_the_fall" },
+          "score": 33
+        },
+        {
+          "user": { "name": "MAKSMAKS1167", "id": "maksmaks1167" },
+          "score": 30
+        },
+        {
+          "user": {
+            "name": "CreatineMonohydrate",
+            "id": "creatinemonohydrate"
+          },
+          "score": 29
+        },
+        { "user": { "name": "rura1969", "id": "rura1969" }, "score": 26 },
+        { "user": { "name": "BuenosS", "id": "buenoss" }, "score": 22 }
+      ]
+    },
+    {
+      "rank": 9,
+      "id": "psPqUEyW",
+      "score": 136,
+      "players": [
+        { "user": { "name": "GROBOVICHOK", "id": "grobovichok" }, "score": 37 },
+        { "user": { "name": "PetroChess", "id": "petrochess" }, "score": 32 },
+        { "user": { "name": "tiger2505", "id": "tiger2505" }, "score": 24 },
+        { "user": { "name": "bydiwelnuk", "id": "bydiwelnuk" }, "score": 22 },
+        {
+          "user": { "name": "Vakhula-1985", "id": "vakhula-1985" },
+          "score": 21
+        }
+      ]
+    },
+    {
+      "rank": 10,
+      "id": "berdichev",
+      "score": 125,
+      "players": [
+        { "user": { "name": "vladilevi", "id": "vladilevi" }, "score": 31 },
+        { "user": { "name": "dinamo223", "id": "dinamo223" }, "score": 30 },
+        {
+          "user": { "name": "ChessKing7777777", "id": "chessking7777777" },
+          "score": 26
+        },
+        { "user": { "name": "DARKMAN13", "id": "darkman13" }, "score": 20 },
+        { "user": { "name": "Kokon-25", "id": "kokon-25" }, "score": 18 }
+      ]
+    }
+  ],
+  "duelTeams": {},
+  "standing": {
+    "page": 1,
+    "players": [
+      {
+        "name": "Poblesk",
+        "rank": 1,
+        "rating": 2482,
+        "score": 63,
+        "sheet": { "scores": "4422242224444445433", "fire": true },
+        "team": "6s03nPhu"
+      },
+      {
+        "name": "derik_yt",
+        "rank": 2,
+        "rating": 2527,
+        "score": 50,
+        "sheet": { "scores": "1302204442212055230422" },
+        "team": "rLAQU1ap"
+      },
+      {
+        "name": "T-Rexy",
+        "rank": 3,
+        "rating": 2336,
+        "score": 48,
+        "sheet": { "scores": "3030000244455330303303" },
+        "team": "6s03nPhu"
+      },
+      {
+        "name": "Izi_raiting",
+        "rank": 4,
+        "rating": 2430,
+        "score": 46,
+        "sheet": { "scores": "20442322310444533" },
+        "team": "rLAQU1ap"
+      },
+      {
+        "name": "Zazuliak",
+        "rank": 5,
+        "rating": 2523,
+        "score": 46,
+        "sheet": { "scores": "52300300332444433030", "fire": true },
+        "title": "FM",
+        "team": "kremenchuk-zazuliak-team"
+      },
+      {
+        "name": "FitSt_time",
+        "rank": 6,
+        "rating": 2411,
+        "score": 46,
+        "sheet": { "scores": "24442202022244422103" },
+        "team": "kremenchuk-zazuliak-team"
+      },
+      {
+        "name": "Vgrechko99",
+        "rank": 7,
+        "rating": 2354,
+        "score": 45,
+        "sheet": { "scores": "00422242212004444422" },
+        "team": "6s03nPhu"
+      },
+      {
+        "name": "dolynachess",
+        "rank": 8,
+        "rating": 2456,
+        "score": 45,
+        "sheet": { "scores": "304444230044220522" },
+        "team": "Jr5xQCU1"
+      },
+      {
+        "name": "I_am_Malenia",
+        "rank": 9,
+        "rating": 2560,
+        "score": 41,
+        "sheet": { "scores": "5422013020444433", "fire": true },
+        "team": "kremenchuk-zazuliak-team"
+      },
+      {
+        "name": "Ukrop2018",
+        "rank": 10,
+        "rating": 2355,
+        "score": 41,
+        "sheet": { "scores": "2022020044444422032" },
+        "team": "team-odessa"
+      }
+    ]
+  },
+  "id": "sH24g2zH",
+  "createdBy": "dolynachess",
+  "startsAt": "2023-09-25T18:00:00Z",
+  "system": "arena",
+  "fullName": "Українська ліга 138 Team Battle",
+  "minutes": 90,
+  "perf": { "key": "blitz", "name": "Blitz", "icon": ")" },
+  "clock": { "limit": 180, "increment": 0 },
+  "variant": "standard",
+  "rated": true,
+  "berserkable": true,
+  "verdicts": { "list": [], "accepted": true },
+  "teamBattle": {
+    "teams": {
+      "4CBcMn8l": "КПДЮ-1",
+      "6s03nPhu": "Колос (Бучач)",
+      "9Jp3nFc8": "ЛША тренер МГ Фірман Назар",
+      "Jr5xQCU1": "DOLYNACHESS (Шахова Долина)",
+      "K70K90mu": "Рівне",
+      "WI4TwUOd": "ШШК 15",
+      "Ydful3Z4": "Метрополитен 90 и старше. Харьков",
+      "YupE7v30": "Рогатин",
+      "ZFWuD055": "Школа Інтелектуального Розвитку \"Розвій\"",
+      "berdichev": "Berdichev",
+      "bnmmZI3d": "Лозовской ШШК",
+      "chess-dream-ivano-frankivsk": "Chess dream (Ivano-Frankivsk)",
+      "d3wRZnAk": "Івано-Франківська ДЮСШ №3",
+      "djS4IDqL": "МенаКлубШахмат",
+      "kharkiv-regional-palace": "KHARKIV REGIONAL PALACE",
+      "kherson-atlant": "Kherson Atlant",
+      "kqEXXC79": "Вінницька шахова школа",
+      "kremenchuk-zazuliak-team": "Kremenchuk - Zazuliak Team",
+      "maramara": "MARAMARA",
+      "myrhorod-chess-club-yavorovsky-team": "Myrhorod Chess Club - Yavorovsky Team",
+      "owyKUmZr": "Україна-64",
+      "poltava": "POLTAVA",
+      "psPqUEyW": "Шахтар Кристинопіль",
+      "rLAQU1ap": "\"Кривбас\"- Кривий Ріг",
+      "team-odessa": "Team Odessa",
+      "team-zaporizhzhia-region----": "Team Zaporizhzhia Region | Збірна Запорізької області",
+      "the-chess-elite-stryi-lviv-region": "\"The Chess Elite\" (Stryi, L'viv Region)",
+      "ukrainian-national-team": "Ukrainian national team",
+      "wLnPcwan": "Тисмениця",
+      "zhydachiv-chess-team": "Zhydachiv chess team"
+    },
+    "nbLeaders": 5
+  },
+  "description": "138 турнір [Українська шахова ліга](https://lichess.org/team/6Z8Kp8JQ)"
+}

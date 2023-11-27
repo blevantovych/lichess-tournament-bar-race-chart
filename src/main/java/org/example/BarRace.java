@@ -1,16 +1,12 @@
 package org.example;
 
-import com.google.gson.Gson;
-import lombok.SneakyThrows;
-import lombok.ToString;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -24,6 +20,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import com.google.gson.Gson;
+
+import lombok.SneakyThrows;
+import lombok.ToString;
+
 
 @ToString
 class Move {
@@ -31,6 +38,7 @@ class Move {
 	public String c; // clock info (0:02:25) - 2 minutes 25 seconds left
 
 	public int clockTimeToSeconds() {
+		if (c == null) return 0;
 		String[] hoursMinutesSeconds = c.split(":");
 		int minutes = Integer.parseInt(hoursMinutesSeconds[1]);
 		int seconds = Integer.parseInt(hoursMinutesSeconds[2]);
@@ -54,6 +62,7 @@ class Game {
 	public String BlackRatingDiff;
 	public String WhiteTitle;
 	public String BlackTitle;
+	// for tournament
 	public String WhiteTeam;
 	public String BlackTeam;
 	public String Variant;
@@ -74,7 +83,7 @@ class Sheet {
 
 	public List<Integer> getScores() {
 
-		if (scoreList == null) {
+		if (scoreList == null && scores.length() > 0) {
 			scoreList = Arrays.stream(scores.split("")).map(Integer::valueOf).collect(Collectors.toList());
 			Collections.reverse(scoreList);
 		}
@@ -105,15 +114,42 @@ public class BarRace {
 	static List<Game> games = new ArrayList<>();
 	static Map<String, String> teamNames;
 	static {
+		String tournamentId = "sH24g2zH";
+        //
+		// System.out.println("downloading games...");
+		// downloadTournamentGames(tournamentId);
+        //
+		// System.out.println("downloading standings...");
+		// downloadStandings(tournamentId);
+		// convertStandingToJson(tournamentId);
+
+		// System.out.println("downloading team names...");
+		// downloadTeamNames(tournamentId);
+        //
+		// System.out.println("converting pgn to json...");
+        //
+		// ProcessBuilder builder = new ProcessBuilder("./convert_pgn_to_json.sh", tournamentId);
+        //
+		// builder.redirectOutput(new File(tournamentId + ".json"));
+		// builder.redirectError(new File("error.txt"));
+
+
+		// try {
+		// 	Process p = builder.start(); // may throw IOException
+		// 	p.waitFor();
+		// } catch(Exception e) {
+        //
+		// }
 		Gson gson = new Gson();
 		JSONParser parser = new JSONParser();
 		try {
 			// https://lichess.org/api/tournament/{id}/results?sheet=true
-			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/standings.json"));
+			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/standings_" + tournamentId + ".json"));
 			// https://lichess.org/api/tournament/{id}/games?clocks=true
-			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
+			// JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
+			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/"+ tournamentId + ".json"));
 			// https://lichess.org/api/tournament/{id}
-			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/teamNames.json"));
+			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/teamNames_" + tournamentId + ".json"));
 			for (Object gameObj : gamesJson) {
 				games.add(gson.fromJson(gameObj.toString(), Game.class));
 			}
@@ -122,6 +158,8 @@ public class BarRace {
 				standings.add(standing);
 			}
 			teamNames = JSONToMapConverter.convertJSONToMap(teamNamesJson.toJSONString());
+			System.out.println(standings);
+			// generateDataForBarRaceChart();
 		} catch (IOException | ParseException e) {
 			throw new RuntimeException(e);
 		}
@@ -192,8 +230,21 @@ public class BarRace {
 		return teamScores;
 	}
 	
+	private static void convertStandingToJson(String tournamentId) {
+		ProcessBuilder builder = new ProcessBuilder("./convert_ndjson_to_json.sh",  "standings_" + tournamentId + ".ndjson");
+
+		builder.redirectOutput(new File("standings_" + tournamentId + ".json"));
+
+		try {
+			Process p = builder.start(); // may throw IOException
+			p.waitFor();
+		} catch(Exception e) {
+
+		}
+	}
+
 	public static int getGameDuration(Game game) {
-		if (game.moves.size() < 2) return 0;
+		if (game.moves.size() < 2 || game.TimeControl.equals("-") /* Correspondence */) return 0;
 		int gameDurationInSeconds = 0;
 		int initialTimeInSeconds = Integer.parseInt(game.TimeControl.split("\\+")[0]);
 		// <= probably could have been ==
@@ -231,11 +282,54 @@ public class BarRace {
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
-		// System.out.println(games.stream().map(game -> game.moves.size()).reduce(Integer::sum));
-		// System.out.println(games.stream().filter(game -> game.moves.size() < 2).collect(Collectors.toList()).size());
-		// System.out.println(games.stream().filter(game -> game.moves.size() < 2).collect(Collectors.toList()));
-		int tournamentDurationInSeconds = (int) (1.5 /* hours */ * 60 * 60 /* to make sure that all games are counted */);
+	public static void downloadTeamNames(String tournamentId) {
+        int CONNECT_TIMEOUT = 10000;
+        int READ_TIMEOUT = 10000;
+		String url = "https://lichess.org/api/tournament/" + tournamentId;
+		try {
+			FileUtils.copyURLToFile(new URL(url), new File("teamNames_" + tournamentId + ".json"), CONNECT_TIMEOUT, READ_TIMEOUT);
+		} catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+	public static void downloadStandings(String tournamentId) {
+        int CONNECT_TIMEOUT = 10000;
+        int READ_TIMEOUT = 10000;
+		String url = "https://lichess.org/api/tournament/" + tournamentId + "/results?sheet=true";
+		try {
+			FileUtils.copyURLToFile(new URL(url), new File("standings_" + tournamentId + ".ndjson"), CONNECT_TIMEOUT, READ_TIMEOUT);
+		} catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+
+	public static void downloadTournamentGames(String tournamentId) {
+        int CONNECT_TIMEOUT = 10000;
+        int READ_TIMEOUT = 10000;
+		String url = "https://lichess.org/api/tournament/" + tournamentId + "/games";
+		try {
+			FileUtils.copyURLToFile(new URL(url), new File(tournamentId + ".pgn"), CONNECT_TIMEOUT, READ_TIMEOUT);
+		} catch (IOException e) {
+            e.printStackTrace();
+        }
+
+	}
+
+	public static void main(String[] args) throws IOException, InterruptedException {
+	}
+
+	public static int parseElo(String stringToParse) {
+		try {
+		   return Integer.parseInt(stringToParse);
+		} catch(Exception ex) {
+		   return 0; //Use default value if parsing failed
+		}
+	}
+
+	private static void generateDataForBarRaceChart() throws IOException  {
+		int tournamentDurationInSeconds = (int) (1.5 /* hours */ * 60 * 60);
 
 		var teamScoresInEachSecond = IntStream.rangeClosed(0, tournamentDurationInSeconds);
 		FileWriter f = new FileWriter("output.csv");
@@ -262,19 +356,5 @@ public class BarRace {
 			teamGames.add(game);
 			teamToGames.put(teamId, teamGames);
 		}
-	}
-
-	private static int getBerserkedForfeitedGameDuration(Game game, int initialTimeInSeconds, boolean hasBerserked) {
-		final int berserkedGameDurationInSeconds = initialTimeInSeconds / 2;
-		int gameDurationInSeconds = berserkedGameDurationInSeconds;
-		final Move lastMove = game.moves.get(game.moves.size() - 1);
-		int timeWinnerUsed;
-		if (hasBerserked) {
-			timeWinnerUsed = berserkedGameDurationInSeconds - lastMove.clockTimeToSeconds();
-		} else {
-			timeWinnerUsed = initialTimeInSeconds - lastMove.clockTimeToSeconds();
-		}
-		gameDurationInSeconds += timeWinnerUsed;
-		return gameDurationInSeconds;
 	}
 }
