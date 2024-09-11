@@ -114,55 +114,6 @@ public class BarRace {
 	static List<Game> games = new ArrayList<>();
 	static Map<String, String> teamNames;
 	static {
-		String tournamentId = "sH24g2zH";
-        //
-		// System.out.println("downloading games...");
-		// downloadTournamentGames(tournamentId);
-        //
-		// System.out.println("downloading standings...");
-		// downloadStandings(tournamentId);
-		// convertStandingToJson(tournamentId);
-
-		// System.out.println("downloading team names...");
-		// downloadTeamNames(tournamentId);
-        //
-		// System.out.println("converting pgn to json...");
-        //
-		// ProcessBuilder builder = new ProcessBuilder("./convert_pgn_to_json.sh", tournamentId);
-        //
-		// builder.redirectOutput(new File(tournamentId + ".json"));
-		// builder.redirectError(new File("error.txt"));
-
-
-		// try {
-		// 	Process p = builder.start(); // may throw IOException
-		// 	p.waitFor();
-		// } catch(Exception e) {
-        //
-		// }
-		Gson gson = new Gson();
-		JSONParser parser = new JSONParser();
-		try {
-			// https://lichess.org/api/tournament/{id}/results?sheet=true
-			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/standings_" + tournamentId + ".json"));
-			// https://lichess.org/api/tournament/{id}/games?clocks=true
-			// JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
-			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/"+ tournamentId + ".json"));
-			// https://lichess.org/api/tournament/{id}
-			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/teamNames_" + tournamentId + ".json"));
-			for (Object gameObj : gamesJson) {
-				games.add(gson.fromJson(gameObj.toString(), Game.class));
-			}
-			for (Object standingJson : standingsJson) {
-				Standing standing = gson.fromJson(standingJson.toString(), Standing.class);
-				standings.add(standing);
-			}
-			teamNames = JSONToMapConverter.convertJSONToMap(teamNamesJson.toJSONString());
-			System.out.println(standings);
-			// generateDataForBarRaceChart();
-		} catch (IOException | ParseException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	@SneakyThrows
@@ -172,6 +123,8 @@ public class BarRace {
 		for (Standing standing : standings) {
 			playerCurrentGame.put(standing.username, 0);
 		}
+
+		// System.out.println(playerCurrentGame);
 		var gamesWithEndTime = games.stream()
 				.peek(game -> {
 					int gameDurationInSeconds = getGameDuration(game);
@@ -199,19 +152,35 @@ public class BarRace {
 
 		Map<String, List<Game>> teamToGames = new HashMap<>();
 		for (Game game : gamesWithEndTime) {
-			addGameToTeam(game, game.WhiteTeam, teamToGames);
-			addGameToTeam(game, game.BlackTeam, teamToGames);
+			// for some reason there can be no team
+			if (game.WhiteTeam != null) {
+				addGameToTeam(game, game.WhiteTeam, teamToGames);
+			}
+			if (game.BlackTeam != null) {
+				addGameToTeam(game, game.BlackTeam, teamToGames);
+			}
 		}
 
 //		List<Pair<String, Integer>> teamScores = new ArrayList<>();
 		Map<String, Integer> teamScores = new HashMap<>();
 
+		// System.out.println(teamToGames.keySet());
 		for (Map.Entry<String, List<Game>> teamGames : teamToGames.entrySet()) {
 			String team = teamNames.get(teamGames.getKey());
 			Map<String, Integer> contibutionsByPlayer = new HashMap<>();
 
 			teamGames.getValue().forEach(game -> {
+
 				String teamPlayer = teamGames.getKey().equals(game.WhiteTeam) ? game.White : game.Black;
+				// try {
+				// 	teamPlayer = ;
+				// } catch(Exception e) {
+				// 	System.out.println("teamGames.getKey() " + teamGames.getKey());
+				// 	System.out.println("game.WhiteTeam " + game.WhiteTeam);
+				// 	System.out.println("game.White " + game.White);
+				// 	System.out.println("game.Black " + game.Black);
+				// 	System.out.println("game.Site" + game.Site);
+				// }
 				int playerContribution = teamGames.getKey().equals(game.WhiteTeam) ? game.whiteScore : game.blackScore;
 				if (contibutionsByPlayer.containsKey(teamPlayer)) {
 					contibutionsByPlayer.put(teamPlayer, contibutionsByPlayer.get(teamPlayer) + playerContribution);
@@ -294,30 +263,78 @@ public class BarRace {
 	}
 
 	public static void downloadStandings(String tournamentId) {
-        int CONNECT_TIMEOUT = 10000;
-        int READ_TIMEOUT = 10000;
+		int CONNECT_TIMEOUT = 10000;
+		int READ_TIMEOUT = 10000;
 		String url = "https://lichess.org/api/tournament/" + tournamentId + "/results?sheet=true";
 		try {
 			FileUtils.copyURLToFile(new URL(url), new File("standings_" + tournamentId + ".ndjson"), CONNECT_TIMEOUT, READ_TIMEOUT);
 		} catch (IOException e) {
-            e.printStackTrace();
-        }
+			e.printStackTrace();
+		}
 	}
 
 
 	public static void downloadTournamentGames(String tournamentId) {
-        int CONNECT_TIMEOUT = 10000;
-        int READ_TIMEOUT = 10000;
+		int CONNECT_TIMEOUT = 10000;
+		int READ_TIMEOUT = 10000;
 		String url = "https://lichess.org/api/tournament/" + tournamentId + "/games";
 		try {
 			FileUtils.copyURLToFile(new URL(url), new File(tournamentId + ".pgn"), CONNECT_TIMEOUT, READ_TIMEOUT);
 		} catch (IOException e) {
-            e.printStackTrace();
-        }
-
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) throws IOException, InterruptedException {
+		String tournamentId = "sH24g2zH";
+        //
+		// System.out.println("downloading games...");
+		// downloadTournamentGames(tournamentId);
+        //
+		// System.out.println("downloading standings...");
+		// downloadStandings(tournamentId);
+		// convertStandingToJson(tournamentId);
+
+		// System.out.println("downloading team names...");
+		// downloadTeamNames(tournamentId);
+        //
+		// System.out.println("converting pgn to json...");
+        //
+		// ProcessBuilder builder = new ProcessBuilder("./convert_pgn_to_json.sh", tournamentId);
+                //
+		// builder.redirectOutput(new File(tournamentId + ".json"));
+		// builder.redirectError(new File("error.txt"));
+
+
+		// try {
+		// 	Process p = builder.start(); // may throw IOException
+		// 	p.waitFor();
+		// } catch(Exception e) {
+        //
+		// }
+		Gson gson = new Gson();
+		JSONParser parser = new JSONParser();
+		try {
+			// https://lichess.org/api/tournament/{id}/results?sheet=true
+			JSONArray standingsJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/standings_" + tournamentId + ".json"));
+			// https://lichess.org/api/tournament/{id}/games?clocks=true
+			// JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_tournament.json"));
+			JSONArray gamesJson = (JSONArray) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/"+ tournamentId + ".json"));
+			// https://lichess.org/api/tournament/{id}
+			JSONObject teamNamesJson = (JSONObject) parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/java/org/example/teamNames_" + tournamentId + ".json"));
+			for (Object gameObj : gamesJson) {
+				games.add(gson.fromJson(gameObj.toString(), Game.class));
+			}
+			for (Object standingJson : standingsJson) {
+				Standing standing = gson.fromJson(standingJson.toString(), Standing.class);
+				standings.add(standing);
+			}
+			teamNames = JSONToMapConverter.convertJSONToMap(teamNamesJson.toJSONString());
+			// System.out.println(teamNames);
+			generateDataForBarRaceChart();
+		} catch (IOException | ParseException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public static int parseElo(String stringToParse) {
@@ -338,7 +355,8 @@ public class BarRace {
 		teamNamesList.forEach(teamName -> writeToFile(teamName.replace("\"", "").replace(",", "") + ",", f));
 		writeToFile(System.getProperty("line.separator"), f);
 		teamScoresInEachSecond.forEach(second -> {
-			var teamScoresAtSpecificInstant  = getTeamScores(second);
+			var teamScoresAtSpecificInstant = getTeamScores(second);
+			// System.out.println("Second: " + second);
 			var tournamentStart = LocalTime.parse("18:00:00");
 			var newTime = tournamentStart.plusSeconds(second);
 			writeToFile(newTime + ",", f);

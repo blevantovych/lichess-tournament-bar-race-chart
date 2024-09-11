@@ -20,11 +20,41 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.net.*;
+import java.io.*;
 
 public class Main {
 	public static final int AVERAGE_GAME_LENGTH = 40;
 
-	public static void main(String[] args) throws IOException, ParseException {
+	public static void analyzeGame(String gameId) throws Exception {
+		URL lichessAnalysis = new URL(String.format("https://lichess.org/%s/request-analysis", gameId));
+		HttpURLConnection lichessAnalysisConnection = (HttpURLConnection) lichessAnalysis.openConnection();
+		lichessAnalysisConnection.setRequestMethod("POST");
+		lichessAnalysisConnection.setRequestProperty("Cookie", "lila2=4a391d669feb555ebdf0c6ffa5c83c1f86f650eb-sid=JCHm8XZqbX2j1uCzEBYdbm&sessionId=QYrneIv3FwndT8OYckuxAM");
+		System.out.println("lila2=4a391d669feb555ebdf0c6ffa5c83c1f86f650eb-sid=JCHm8XZqbX2j1uCzEBYdbm&sessionId=QYrneIv3FwndT8OYckuxAM");
+		lichessAnalysisConnection.setRequestProperty("Origin", "https://lichess.org");
+		lichessAnalysisConnection.setRequestProperty("Host", "localhost");
+		lichessAnalysisConnection.setRequestProperty("Content-Length", "0");
+		lichessAnalysisConnection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
+		lichessAnalysisConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:221.0) Gecko/20100101 Firefox/31.0"); // add this line to your code
+		lichessAnalysisConnection.setDoInput(true);
+		lichessAnalysisConnection.setDoOutput(true);
+		Map<String, List<String>> responseHeaders = lichessAnalysisConnection.getHeaderFields();
+		for (Map.Entry<String, List<String>> entry : responseHeaders.entrySet()) {
+			System.out.println(entry.getKey() + ": " + entry.getValue());
+		}
+		BufferedReader in = new BufferedReader(
+				new InputStreamReader(
+						lichessAnalysisConnection.getInputStream()));
+		String inputLine;
+
+		while ((inputLine = in.readLine()) != null)
+			System.out.println(inputLine);
+		in.close();
+	}
+
+	public static void main(String[] args) throws Exception, IOException, ParseException {
+//		analyzeGame("mAAfePPD");
 		double totalMinutes = 0;
 		double totalMoves = 0;
 		int analyzedGames = 0;
@@ -33,7 +63,8 @@ public class Main {
 		List<String> gamesWithCheckmate = new ArrayList<>();
 		List<String> notAnalyzedBlitzGames = new ArrayList<>();
 		JSONParser parser = new JSONParser();
-		Object obj = parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/games.json"));
+//		Object obj = parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/lichess_bodya17_2024-02-18.json"));
+		Object obj = parser.parse(new FileReader("/Users/blevantovych/Desktop/total-time-played-on-lichess/src/main/resources/games_06_29.json"));
 		JSONArray games = (JSONArray) obj;
 
 
@@ -56,6 +87,7 @@ public class Main {
 		for (Object game : games) {
 			dates.add((String) ((JSONObject) game).get("Date"));
 			String timeControl = (String) ((JSONObject) game).get("TimeControl");
+			String opening = (String) ((JSONObject) game).get("Opening");
 			JSONArray moves = (JSONArray) ((JSONObject) game).get("moves");
 			totalMoves += moves.size() / 2;
 			Matcher matcher = pattern.matcher(timeControl);
@@ -64,16 +96,16 @@ public class Main {
 				double incrementInMinutes = Integer.parseInt(matcher.group(2)) / 60 * AVERAGE_GAME_LENGTH * 2; // 2 because clock is incremented for each player
 				totalMinutes += gameLengthInMinutes + incrementInMinutes;
 			}
-			if (((JSONObject)(moves.get(0))).get("e") != null && ((String)(((JSONObject) game).get("Event"))).contains("Blitz")) {
+			if (!moves.isEmpty() && ((JSONObject)(moves.get(0))).get("e") != null && ((String)(((JSONObject) game).get("Event"))).contains("Blitz")) {
 				analyzedGames++;
 			}
-			if (((JSONObject)(moves.get(0))).get("e") == null && ((String)(((JSONObject) game).get("Event"))).contains("Blitz")) {
+			if (!moves.isEmpty() && ((JSONObject)(moves.get(0))).get("e") == null && ((String)(((JSONObject) game).get("Event"))).contains("Blitz")) {
 				notAnalyzedBlitzGames.add((String)((JSONObject) game).get("Site"));
 			}
 			if (((String)(((JSONObject) game).get("Event"))).contains("Blitz")) {
 				blitzGames++;
 			}
-			if (moves.size() < 40) {
+			if (moves.size() < 40 && opening.contains("Sicilian")) {
 				for (Object move : moves) {
 					String m = (String) ((JSONObject) move).get("m");
 					if (m.contains("#")) {
